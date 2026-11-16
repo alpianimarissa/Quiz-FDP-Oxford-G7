@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oxford International Lower Secondary Maths - Interactive Quiz</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- KaTeX CSS for beautiful inline math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <!-- KaTeX JS -->
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .fade-in { animation: fadeIn 0.25s ease-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Ensure KaTeX renders smoothly inline without breaking text flow */
+        .katex { font-size: 1.05em !important; }
+        .question-text { line-height: 1.8; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-indigo-700 text-white shadow-md py-6 px-4 sm:px-8">
+        <div class="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+                <span class="bg-indigo-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider">Oxford Curriculum</span>
+                <h1 class="text-2xl sm:text-3xl font-bold mt-1">Lower Secondary Mathematics Quiz</h1>
+                <p class="text-indigo-200 text-sm mt-1">Integers, Fractions, Decimals, & Percentages (Medium to HOTS)</p>
+            </div>
+            <div class="flex items-center gap-3 bg-indigo-800/60 px-4 py-2.5 rounded-xl border border-indigo-600/50">
+                <div class="text-right">
+                    <div class="text-xs text-indigo-200">Score</div>
+                    <div id="header-score" class="text-xl font-bold text-amber-300">0 / 60</div>
+                </div>
+                <div class="h-8 w-px bg-indigo-600"></div>
+                <div class="text-right">
+                    <div class="text-xs text-indigo-200">Progress</div>
+                    <div id="header-progress" class="text-xl font-bold text-emerald-300">0%</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-4xl w-full mx-auto px-4 sm:px-8 py-8">
+        
+        <!-- Student Info Bar -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div class="w-full md:w-auto flex-1">
+                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Student Name</label>
+                <input type="text" id="student-name" placeholder="Enter your full name..." class="w-full px-3.5 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium">
+            </div>
+            <div class="w-full md:w-auto flex-1">
+                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Class / Year</label>
+                <input type="text" id="student-class" placeholder="e.g., Year 8 / 8A" class="w-full px-3.5 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium">
+            </div>
+            <div class="w-full md:w-auto flex items-end gap-2 pt-2 md:pt-0">
+                <button onclick="saveStudentInfo()" class="w-full md:w-auto px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-sm transition shadow-sm">Save Info</button>
+                <button onclick="resetQuiz()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-lg text-sm transition">Reset</button>
+            </div>
+        </div>
+
+        <!-- Section Jump Selector -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Jump To Part:</span>
+                <select id="part-selector" onchange="jumpToPart(this.value)" class="px-3 py-1.5 rounded-lg border border-slate-300 text-sm font-medium bg-slate-50 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="partA">Part A: Integers (1-15)</option>
+                    <option value="partB">Part B: Fractions (16-30)</option>
+                    <option value="partC">Part C: Decimals (31-45)</option>
+                    <option value="partD">Part D: Percentages (46-60)</option>
+                </select>
+            </div>
+            <div class="text-xs font-semibold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100" id="current-part-label">
+                Part A: Integers
+            </div>
+        </div>
+
+        <!-- Single Question Navigation Container -->
+        <div id="quiz-container" class="space-y-6">
+            <!-- Rendered dynamically -->
+        </div>
+
+        <!-- Bottom Navigation Controls -->
+        <div class="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <button onclick="prevQuestion()" id="prev-btn" class="w-full sm:w-auto px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition text-sm flex items-center justify-center gap-2">
+                ← Previous Question
+            </button>
+            <div class="text-sm font-medium text-slate-600">
+                Question <span id="current-q-num" class="font-bold text-indigo-600">1</span> of 60
+            </div>
+            <button onclick="nextQuestion()" id="next-btn" class="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition text-sm flex items-center justify-center gap-2 shadow-sm">
+                Next Question →
+            </button>
+        </div>
+
+        <!-- Finish & Summary Banner -->
+        <div class="mt-6 bg-gradient-to-r from-indigo-900 to-slate-900 text-white p-6 rounded-2xl shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+                <h3 class="font-bold text-lg">Ready to review your complete score?</h3>
+                <p class="text-slate-300 text-xs mt-1">Check your correct answers summary and percentage anytime.</p>
+            </div>
+            <button onclick="submitQuizModal()" class="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold rounded-xl transition shadow-md text-sm whitespace-nowrap">
+                View Full Summary
+            </button>
+        </div>
+    </main>
+
+    <!-- Custom Modal / Message Box -->
+    <div id="custom-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full mx-4 shadow-xl border border-slate-200 fade-in">
+            <h3 id="modal-title" class="text-xl font-bold text-slate-900 mb-2">Notice</h3>
+            <p id="modal-message" class="text-slate-600 text-sm mb-6 whitespace-pre-line leading-relaxed"></p>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeModal()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition shadow-sm">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-auto py-6 text-center text-xs text-slate-400 border-t border-slate-200 bg-white">
+        Oxford International Lower Secondary Mathematics Assessment &copy; 2026. All answers persist locally.
+    </footer>
+
+    <!-- Quiz Data & Logic Script -->
+    <script>
+        // Quiz Data Structure with inline KaTeX format $...$
+        const quizData = [
+            // PART A: INTEGERS (1-15)
+            { id: 1, part: 'partA', q: "A submarine is cruising at a depth of $245\\text{ m}$ below sea level. It ascends $85\\text{ m}$ to avoid an underwater ridge, and then dives twice as far as its ascent to reach a research trench. What is the final depth of the submarine relative to sea level?", options: ["$-160\\text{ m}$", "$-330\\text{ m}$", "$-415\\text{ m}$", "$-75\\text{ m}$"], answer: 1 },
+            { id: 2, part: 'partA', q: "In a mathematics competition, $+5$ points are awarded for each correct answer, $-3$ points for each incorrect answer, and $-1$ point for each unanswered question. Sarah answered $18$ questions correctly and $7$ incorrectly out of a $30$-question test. What was her final score?", options: ["$69$", "$74$", "$61$", "$64$"], answer: 3 },
+            { id: 3, part: 'partA', q: "Evaluate the expression: $[-48 \\div (-6) + (-3) \\times 5] \\times (-2) - (-14)$.", options: ["$28$", "$0$", "$-28$", "$14$"], answer: 0 },
+            { id: 4, part: 'partA', q: "The temperature in Moscow at 06:00 was $-11^\\circ\\text{C}$. By noon, the temperature had risen by $8^\\circ\\text{C}$. By midnight, it dropped at a steady rate of $2^\\circ\\text{C}$ per hour for $6$ hours. What was the temperature at midnight?", options: ["$-9^\\circ\\text{C}$", "$-3^\\circ\\text{C}$", "$-15^\\circ\\text{C}$", "$-12^\\circ\\text{C}$"], answer: 2 },
+            { id: 5, part: 'partA', q: "If $a = -4$, $b = 3$, and $c = -2$, find the value of $\\dfrac{a^2 - b^3}{c - a}$.", options: ["$21.5$", "$-5.5$", "$-21.5$", "$5.5$"], answer: 1 },
+            { id: 6, part: 'partA', q: "A freezer is set to cool its interior at a rate of $4^\\circ\\text{C}$ every $15$ minutes. If the initial room temperature inside the freezer is $22^\\circ\\text{C}$, how long will it take to reach $-14^\\circ\\text{C}$?", options: ["$1\\text{ hr } 45\\text{ min}$", "$2\\text{ hrs } 30\\text{ min}$", "$3\\text{ hrs } 00\\text{ min}$", "$2\\text{ hrs } 15\\text{ min}$"], answer: 3 },
+            { id: 7, part: 'partA', q: "Two integers have a product of $-72$ and a sum of $-6$. What is the positive difference between these two integers?", options: ["$18$", "$6$", "$12$", "$24$"], answer: 0 },
+            { id: 8, part: 'partA', q: "Look at the number sequence: $-23, -17, -11, -5, \\dots$ What is the first positive term in this sequence, and which term number is it?", options: ["$7$ (6th term)", "$1$ (6th term)", "$1$ (5th term)", "$5$ (5th term)"], answer: 2 },
+            { id: 9, part: 'partA', q: "A trader bought $50$ crates of apples. On Monday, he made a profit of $\$12$ per crate on $20$ crates. On Tuesday, he suffered a loss of $\$8$ per crate on $15$ crates. On Wednesday, he broke even on the rest. What was his net profit or loss?", options: ["Loss of $\$120$", "Profit of $\$360$", "Profit of $\$120$", "Profit of $\$160$"], answer: 2 },
+            { id: 10, part: 'partA', q: "Find the missing integer $x$ that satisfies the equation: $(-15) \\times x + (-24) = 66$.", options: ["$-6$", "$6$", "$-2.8$", "$-90$"], answer: 0 },
+            { id: 11, part: 'partA', q: "An elevator starts on the $12\\text{th}$ floor, goes down $15$ floors to the underground parking, goes up $9$ floors, and finally goes down $8$ floors. If the ground floor is $0$, which floor is the elevator on now?", options: ["$-1$", "$-2$", "$0$", "$-3$"], answer: 1 },
+            { id: 12, part: 'partA', q: "Which of the following expressions yields the smallest integer value?", options: ["$-5 \\times (-4) - 25$", "$-36 \\div 4 + (-2)$", "$-18 - (-7) \\times 2$", "$(-3)^3 + 15$"], answer: 3 },
+            { id: 13, part: 'partA', q: "A mountaineer records that for every $300\\text{ m}$ of ascent, the air temperature drops by $2^\\circ\\text{C}$. If the temperature at the base camp ($1,200\\text{ m}$) is $5^\\circ\\text{C}$, what is the temperature at the summit ($3,900\\text{ m}$)?", options: ["$-18^\\circ\\text{C}$", "$-13^\\circ\\text{C}$", "$-11^\\circ\\text{C}$", "$-15^\\circ\\text{C}$"], answer: 1 },
+            { id: 14, part: 'partA', q: "The sum of four consecutive even integers is $-36$. What is the product of the smallest and the largest of these four integers?", options: ["$-72$", "$96$", "$72$", "$48$"], answer: 2 },
+            { id: 15, part: 'partA', q: "Evaluate: $\\dfrac{-12 \\times (-3) + (-4)^2}{-2 \\times 13}$.", options: ["$-2$", "$2$", "$-\\dfrac{10}{13}$", "$\\dfrac{10}{13}$"], answer: 0 },
+
+            // PART B: FRACTIONS (16-30)
+            { id: 16, part: 'partB', q: "A water tank is $\\dfrac{3}{5}$ full. After $45\\text{ litres}$ of water are drawn out, the tank is $\\dfrac{3}{8}$ full. What is the total capacity of the tank in litres?", options: ["$180\\text{ L}$", "$240\\text{ L}$", "$160\\text{ L}$", "$200\\text{ L}$"], answer: 3 },
+            { id: 17, part: 'partB', q: "Calculate and give your answer as a mixed number in its simplest form: $3\\dfrac{2}{5} - 1\\dfrac{3}{4} \\div \\dfrac{7}{8}$.", options: ["$1\\dfrac{2}{5}$", "$1\\dfrac{31}{35}$", "$2\\dfrac{1}{5}$", "$1\\dfrac{3}{5}$"], answer: 0 },
+            { id: 18, part: 'partB', q: "In a school library, $\\dfrac{2}{7}$ of the books are fiction, $\\dfrac{3}{5}$ of the remainder are non-fiction, and the remaining $140$ books are reference books. How many books are there in total in the library?", options: ["$350$", "$630$", "$490$", "$420$"], answer: 2 },
+            { id: 19, part: 'partB', q: "A rectangular garden has an area of $42\\dfrac{3}{4}\\text{ m}^2$. If its width is $4\\dfrac{1}{2}\\text{ m}$, calculate the perimeter of the garden.", options: ["$14\\text{ m}$", "$28\\text{ m}$", "$27\\dfrac{1}{2}\\text{ m}$", "$19\\text{ m}$"], answer: 1 },
+            { id: 20, part: 'partB', q: "Leo spends $\\dfrac{1}{4}$ of his pocket money on snacks, $\\dfrac{2}{3}$ of it on a book, and saves the rest. If he spent $\$15$ more on the book than on snacks, how much money did he save?", options: ["$\$5$", "$36$", "$4$", "$3$"], answer: 3 },
+            { id: 21, part: 'partB', q: "Simplify the complex fraction: $\\dfrac{\\frac{5}{6} - \\frac{1}{4}}{\\frac{2}{3} + \\frac{1}{2}}$.", options: ["$\\dfrac{1}{2}$", "$\\dfrac{7}{12}$", "$\\dfrac{12}{7}$", "$\\dfrac{5}{14}$"], answer: 0 },
+            { id: 22, part: 'partB', q: "A carpenter needs to cut pieces of wood each measuring $\\dfrac{3}{8}\\text{ m}$ from a plank that is $5\\dfrac{1}{2}\\text{ m}$ long. How many complete pieces can he cut, and what fraction of a metre of wood is left over?", options: ["$14\\text{ pcs, } \\dfrac{2}{3}\\text{ m}$", "$15\\text{ pcs, } \\dfrac{1}{8}\\text{ m}$", "$14\\text{ pcs, } \\dfrac{1}{4}\\text{ m}$", "$13\\text{ pcs, } \\dfrac{5}{8}\\text{ m}$"], answer: 2 },
+            { id: 23, part: 'partB', q: "Which of the following fractions lies exactly halfway between $\\dfrac{3}{7}$ and $\\dfrac{5}{8}$?", options: ["$\\dfrac{8}{15}$", "$\\dfrac{59}{112}$", "$\\dfrac{59}{56}$", "$\\dfrac{1}{2}$"], answer: 1 },
+            { id: 24, part: 'partB', q: "Two pipes can fill a pool. Pipe A alone can fill the pool in $6\\text{ hours}$, while Pipe B alone can fill it in $9\\text{ hours}$. If both pipes are opened together for $2\\text{ hours}$, what fraction of the pool remains empty?", options: ["$\\dfrac{5}{9}$", "$\\dfrac{1}{3}$", "$\\dfrac{2}{3}$", "$\\dfrac{4}{9}$"], answer: 3 },
+            { id: 25, part: 'partB', q: "Evaluate: $\\left(2\\dfrac{1}{3} \\times 1\\dfrac{2}{7}\\right) - \\left(4\\dfrac{1}{2} \\div 2\\dfrac{1}{4}\\right)$.", options: ["$1$", "$2$", "$\\dfrac{1}{2}$", "$0$"], answer: 0 },
+            { id: 26, part: 'partB', q: "A recipe for $12$ muffins requires $2\\dfrac{1}{4}\\text{ cups}$ of flour. If Maya wants to make $20$ muffins, how much flour does she need?", options: ["$3\\dfrac{1}{2}\\text{ cups}$", "$4\\dfrac{1}{4}\\text{ cups}$", "$3\\dfrac{3}{4}\\text{ cups}$", "$3\\dfrac{1}{4}\\text{ cups}$"], answer: 2 },
+            { id: 27, part: 'partB', q: "Maurice claims: \"To find $\\frac{3}{8}$ of a number, you can divide by $8$ and multiply by $3$, OR multiply by $3$ and divide by $8$.\" Which statement best evaluates his claim for calculating $\\frac{3}{8}$ of $640$ mentally?", options: ["Only multiplying by $3$ first is correct because numerators take priority.", "Both methods are mathematically correct, but dividing by $8$ first keeps numbers smaller.", "Both methods are incorrect because fractions must be decimals.", "Dividing by $8$ first only works if the number is odd."], answer: 1 },
+            { id: 28, part: 'partB', q: "Find the value of $x$ if $\\dfrac{2}{3}x - \\dfrac{1}{4} = \\dfrac{5}{6}$.", options: ["$\\dfrac{13}{18}$", "$1\\dfrac{1}{4}$", "$\\dfrac{7}{8}$", "$1\\dfrac{5}{8}$"], answer: 3 },
+            { id: 29, part: 'partB', q: "On a farm, $\\dfrac{4}{9}$ of the animals are sheep, $\\dfrac{1}{3}$ are cows, and the rest are goats. If there are $16$ more sheep than goats, how many cows are on the farm?", options: ["$24$", "$32$", "$72$", "$16$"], answer: 0 },
+            { id: 30, part: 'partB', q: "Arrange the following fractions in ascending order: $\\dfrac{7}{12}, \\dfrac{5}{9}, \\dfrac{11}{18}, \\dfrac{2}{3}$.", options: ["$\\dfrac{7}{12}, \\dfrac{5}{9}, \\dfrac{11}{18}, \\dfrac{2}{3}$", "$\\dfrac{5}{9}, \\dfrac{11}{18}, \\dfrac{7}{12}, \\dfrac{2}{3}$", "$\\dfrac{5}{9}, \\dfrac{7}{12}, \\dfrac{11}{18}, \\dfrac{2}{3}$", "$\\dfrac{2}{3}, \\dfrac{11}{18}, \\dfrac{7}{12}, \\dfrac{5}{9}$"], answer: 2 },
+
+            // PART C: DECIMALS & ROUNDING (31-45)
+            { id: 31, part: 'partC', q: "A living room measures $5.65\\text{ m}$ by $3.15\\text{ m}$. A carpet fitter needs to order carpet based on the exact area rounded to $2$ decimal places ($2\\text{ dp}$), while the homeowner estimates the cost using the area rounded to $2$ significant figures ($2\\text{ sf}$). What is the difference between the two rounded area values?", options: ["$0.02\\text{ m}^2$", "$0.18\\text{ m}^2$", "$0.80\\text{ m}^2$", "$0.20\\text{ m}^2$"], answer: 3 },
+            { id: 32, part: 'partC', q: "A student has to calculate $\\sqrt{5} \\times 4.2^2$ and leave the answer correct to $3$ significant figures ($3\\text{ sf}$). She mistakenly rounds each number to $2\\text{ sf}$ before multiplying ($2.2 \\times 4.2^2 = 38.808 \\approx 39$). What is the difference between her rounded answer ($39$) and the true value rounded to $3\\text{ sf}$? (Use $\\sqrt{5} \\approx 2.236068$)", options: ["$0.2$", "$0.4$", "$0.1$", "$0.0$"], answer: 1 },
+            { id: 33, part: 'partC', q: "Without using a calculator, evaluate: $\\dfrac{0.48 \\times 0.035}{0.0012}$.", options: ["$14$", "$1.4$", "$140$", "$0.14$"], answer: 0 },
+            { id: 34, part: 'partC', q: "A supplier sells $8\\text{ tonnes}$ of gravel at $\$124.99$ per tonne. He tells his customer the total cost is approximately $\$1,000$. Another clerk estimates it as $\$960$. Which rounding method did the supplier use, and which estimate is closer to the actual cost?", options: ["Supplier rounded unit price to nearest $\$10$ to get $\$1,000$; $\$960$ is closer.", "Both rounded to $2\\text{ sf}$; $\$960$ is closer.", "Supplier rounded to nearest dollar ($\$125 \\times 8$); $\$1,000$ is closer to $\$999.92$ by $\$39.84$.", "Supplier rounded to $1\\text{ sf}$ ($\$100$); $\$960$ is closer by $\$39.92$."], answer: 2 },
+            { id: 35, part: 'partC', q: "Given that $348 \\times 65 = 22,620$, what is the value of $22.62 \\div 0.065$?", options: ["$34.8$", "$3,480$", "$3.48$", "$348$"], answer: 3 },
+            { id: 36, part: 'partC', q: "A bottle contains $1.75\\text{ litres}$ of juice. Cups with a capacity of $0.22\\text{ litres}$ are filled from the bottle. How many full cups can be poured, and how much juice remains in the bottle?", options: ["$8\\text{ cups, } 0.01\\text{ L}$", "$7\\text{ cups, } 0.21\\text{ L}$", "$7\\text{ cups, } 0.95\\text{ L}$", "$7\\text{ cups, } 0.021\\text{ L}$"], answer: 1 },
+            { id: 37, part: 'partC', q: "Litha noticed that $\\pi \\approx 3.14$ to both $2\\text{ dp}$ and $3\\text{ sf}$. She concluded that rounding any number to $2\\text{ dp}$ always gives the same result as rounding to $3\\text{ sf}$. Which of the following numbers disproves Litha's claim?", options: ["$0.16666\\dots$", "$2.71828\\dots$", "$9.8124\\dots$", "$1.41421\\dots$"], answer: 0 },
+            { id: 38, part: 'partC', q: "A taxi charges a fixed flag-fall fee of $\$3.50$ plus $\$1.45$ per kilometre travelled. If a passenger pays $\$23.80$ in total, how many kilometres did they travel?", options: ["$16.4\\text{ km}$", "$12\\text{ km}$", "$14\\text{ km}$", "$13.5\\text{ km}$"], answer: 2 },
+            { id: 39, part: 'partC', q: "Calculate: $12.4 - 3.6 \\times (1.85 + 0.65) \\div 0.5$.", options: ["$17.6$", "$4.4$", "$-18.0$", "$-5.6$"], answer: 3 },
+            { id: 40, part: 'partC', q: "Convert the recurring decimal $0.\\dot{4}\\dot{5}$ into a fraction in its simplest form.", options: ["$\\dfrac{9}{20}$", "$\\dfrac{5}{11}$", "$\\dfrac{45}{100}$", "$\\dfrac{4}{9}$"], answer: 1 },
+            { id: 41, part: 'partC', q: "The mass of a box containing $24$ identical metal bolts is $3.86\\text{ kg}$. When the box is empty, its mass is $0.5\\text{ kg}$. What is the mass of a single metal bolt in grams?", options: ["$140\\text{ g}$", "$160.8\\text{ g}$", "$14\\text{ g}$", "$1.4\\text{ g}$"], answer: 0 },
+            { id: 42, part: 'partC', q: "A number $x$ rounded to $2$ decimal places is $4.70$. Which inequality correctly shows the error interval for $x$?", options: ["$4.65 \\le x < 4.75$", "$4.695 \\le x \\le 4.705$", "$4.695 \\le x < 4.705$", "$4.69 \\le x < 4.71$"], answer: 2 },
+            { id: 43, part: 'partC', q: "What is the result of $0.04^2 + \\sqrt{0.0009}$?", options: ["$0.19$", "$0.0046$", "$0.3016$", "$0.0316$"], answer: 3 },
+            { id: 44, part: 'partC', q: "An exchange rate is $\$1 = €0.92$. A tourist exchanges $\$450$ into euros, spends $€285.50$, and exchanges the remaining euros back into dollars at the same rate. How many dollars does she receive back (to the nearest cent)?", options: ["$\$128.50$", "$139.67$", "$118.22$", "$151.63$"], answer: 1 },
+            { id: 45, part: 'partC', q: "A rectangular metal sheet has a length of $1.25\\text{ m}$ and a width of $0.84\\text{ m}$. If a square hole of side $0.35\\text{ m}$ is cut out from its centre, what is the area of the remaining metal sheet?", options: ["$0.9275\\text{ m}^2$", "$1.05\\text{ m}^2$", "$0.35\\text{ m}^2$", "$0.8275\\text{ m}^2$"], answer: 0 },
+
+            // PART D: PERCENTAGES (46-60)
+            { id: 46, part: 'partD', q: "Nicki donates $10\\%$ of her weekly earnings to charity each week, rounding the donation to the nearest euro before sending it. Her weekly wages in February were $€598.30$, $€645.00$, $€658.46$, and $€720.32$. How much more or less did she donate in total compared to taking $10\\%$ of her total monthly earnings and rounding at the end?", options: ["$€1\\text{ less}$", "$€0.21\\text{ more}$", "The exact same amount", "$€1\\text{ more}$"], answer: 3 },
+            { id: 47, part: 'partD', q: "A jacket is reduced by $20\\%$ in a winter sale. Two weeks later, the sale price is reduced by a further $15\\%$. What is the single overall percentage discount on the original price of the jacket?", options: ["$35\\%$", "$32\\%$", "$30\\%$", "$33\\%$"], answer: 1 },
+            { id: 48, part: 'partD', q: "After a $12\\%$ price increase, a laptop costs $\$1,008$. What was the price of the laptop before the increase?", options: ["$\$900$", "$887.04$", "$896$", "$920$"], answer: 0 },
+            { id: 49, part: 'partD', q: "A $5 \\times 2$ rectangular grid has $4$ squares shaded. How many more squares need to be shaded so that $70\\%$ of the entire grid is shaded?", options: ["$7$", "$4$", "$3$", "$6$"], answer: 2 },
+            { id: 50, part: 'partD', q: "In a science exam, Daniel scored $54$ out of $75$. In a history exam, he scored $68$ out of $85$. Which exam did he perform better in, and by how many percentage points?", options: ["Science, by $8\\%$", "History, by $14\\%$", "History, by $6\\%$", "History, by $8\\%$"], answer: 3 },
+            { id: 51, part: 'partD', q: "Sarah invests $\$2,500$ in a savings account that pays $4\\%$ compound interest per annum. How much total interest will she earn after $3$ years? (Round to the nearest cent)", options: ["$\$312.16$", "$300.00$", "$2,812.16$", "$304.00$"], answer: 0 },
+            { id: 52, part: 'partD', q: "The population of a town decreased by $8\\%$ in 2024 and then increased by $10\\%$ in 2025. If the population at the end of 2025 was $25,300$, what was the population at the start of 2024?", options: ["$24,800$", "$25,000$", "$25,806$", "$24,500$"], answer: 1 },
+            { id: 53, part: 'partD', q: "A shopkeeper buys a watch for $\$80$ and marks it up by $45\\%$. During a promotion, he offers a $20\\%$ discount on the marked price. What is his actual percentage profit on the cost price?", options: ["$25\\%$", "$20\\%$", "$16\\%$", "$18\\%$"], answer: 2 },
+            { id: 54, part: 'partD', q: "A solution contains $15\\%$ salt by mass. If you have $400\\text{ g}$ of this solution, how much pure water must be evaporated so that the remaining solution becomes $25\\%$ salt?", options: ["$160\\text{ g}$", "$240\\text{ g}$", "$100\\text{ g}$", "$150\\text{ g}$"], answer: 0 },
+            { id: 55, part: 'partD', q: "Maurice says: \"To find $10\\%$, you divide by $10$. So to find $20\\%$, you just divide by $20$.\" Why is Maurice wrong, and what is the correct rule?", options: ["Dividing by $20$ gives $2\\%$; to find $20\\%$, divide by $2$.", "Dividing by $20$ gives $5\\%$; to find $20\\%$, divide by $5$.", "Dividing by $20$ gives $0.5\\%$; to find $20\\%$, multiply by $20$.", "Maurice is correct because percentages match their divisors."], answer: 1 },
+            { id: 56, part: 'partD', q: "In a school of $800$ students, $55\\%$ are girls. If $40\\%$ of the girls and $30\\%$ of the boys wear glasses, what percentage of the entire school wears glasses?", options: ["$70\\%$", "$35\\%$", "$35.5\\%$", "$36.5\\%$"], answer: 2 },
+            { id: 57, part: 'partD', q: "A car depreciates in value by $15\\%$ each year. If its current value is $\$20,000$, what will its value be after $2$ years?", options: ["$\$14,000$", "$17,000$", "$14,500$", "$14,450$"], answer: 3 },
+            { id: 58, part: 'partD', q: "What is $125\\%$ of $64$ minus $35\\%$ of $120$?", options: ["$38$", "$42$", "$34$", "$48$"], answer: 0 },
+            { id: 59, part: 'partD', q: "A rectangle's length is increased by $20\\%$ and its width is decreased by $20\\%$. How does the area of the new rectangle compare to the original rectangle?", options: ["It stays the same ($0\\%$ change)", "It decreases by $4\\%$", "It increases by $4\\%$", "It decreases by $2\\%$"], answer: 1 },
+            { id: 60, part: 'partD', q: "An alloy consists of copper, zinc, and nickel. Copper makes up $62.5\\%$ of the alloy, and zinc makes up $24\\%$. If there are $54\\text{ g}$ of nickel in a sample of the alloy, what is the total mass of the sample?", options: ["$360\\text{ g}$", "$450\\text{ g}$", "$400\\text{ g}$", "$300\\text{ g}$"], answer: 2 }
+        ];
+
+        let currentIndex = 0; // 0 to 59
+        let userAnswers = JSON.parse(localStorage.getItem('oxford_user_answers')) || {};
+        let studentInfo = JSON.parse(localStorage.getItem('oxford_student_info')) || { name: '', class: '' };
+
+        window.onload = function() {
+            document.getElementById('student-name').value = studentInfo.name;
+            document.getElementById('student-class').value = studentInfo.class;
+            renderCurrentQuestion();
+            updateHeaderStats();
+        };
+
+        function saveStudentInfo() {
+            studentInfo.name = document.getElementById('student-name').value.trim();
+            studentInfo.class = document.getElementById('student-class').value.trim();
+            localStorage.setItem('oxford_student_info', JSON.stringify(studentInfo));
+            showModal("Success", "Student information saved successfully!");
+        }
+
+        function renderCurrentQuestion() {
+            const container = document.getElementById('quiz-container');
+            const q = quizData[currentIndex];
+            const selectedOpt = userAnswers[q.id];
+            const isAnswered = selectedOpt !== undefined;
+
+            // Update part selector dropdown
+            document.getElementById('part-selector').value = q.part;
+            const partNames = { 'partA': 'Part A: Integers', 'partB': 'Part B: Fractions', 'partC': 'Part C: Decimals', 'partD': 'Part D: Percentages' };
+            document.getElementById('current-part-label').innerText = partNames[q.part];
+            document.getElementById('current-q-num').innerText = currentIndex + 1;
+
+            let cardHTML = `
+                <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200 fade-in">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider bg-indigo-50 px-3 py-1 rounded-full">Question ${currentIndex + 1} of 60</span>
+            `;
+
+            if (isAnswered) {
+                if (selectedOpt === q.answer) {
+                    cardHTML += `<span class="bg-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1">✓ Correct</span>`;
+                } else {
+                    cardHTML += `<span class="bg-rose-100 text-rose-700 text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1">✗ Incorrect</span>`;
+                }
+            } else {
+                cardHTML += `<span class="bg-slate-100 text-slate-500 text-xs font-semibold px-3 py-1 rounded-full">Unanswered</span>`;
+            }
+
+            cardHTML += `
+                    </div>
+                    <p class="text-slate-900 font-medium text-lg mb-6 question-text">${q.q}</p>
+                    <div class="grid grid-cols-1 gap-3">
+            `;
+
+            q.options.forEach((opt, optIdx) => {
+                let btnClass = "border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-200 text-slate-700";
+                let markerClass = "bg-slate-200 text-slate-600";
+
+                if (isAnswered) {
+                    if (optIdx === q.answer) {
+                        btnClass = "border-emerald-300 bg-emerald-50 text-emerald-900 font-semibold shadow-sm";
+                        markerClass = "bg-emerald-600 text-white";
+                    } else if (optIdx === selectedOpt) {
+                        btnClass = "border-rose-300 bg-rose-50 text-rose-900 font-semibold shadow-sm";
+                        markerClass = "bg-rose-600 text-white";
+                    } else {
+                        btnClass = "border-slate-100 bg-slate-50/50 text-slate-400 opacity-60";
+                    }
+                }
+
+                const letters = ['A', 'B', 'C', 'D'];
+                cardHTML += `
+                    <button onclick="selectAnswer(${q.id}, ${optIdx})" 
+                        class="text-left p-4 rounded-xl text-base transition flex items-center gap-4 ${btnClass}">
+                        <span class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold ${markerClass}">${letters[optIdx]}</span>
+                        <span class="leading-normal">${opt}</span>
+                    </button>
+                `;
+            });
+
+            cardHTML += `</div></div>`;
+            container.innerHTML = cardHTML;
+
+            // Enable/disable navigation buttons
+            document.getElementById('prev-btn').disabled = currentIndex === 0;
+            document.getElementById('prev-btn').style.opacity = currentIndex === 0 ? '0.5' : '1';
+            document.getElementById('next-btn').disabled = currentIndex === quizData.length - 1;
+            document.getElementById('next-btn').style.opacity = currentIndex === quizData.length - 1 ? '0.5' : '1';
+
+            // Render KaTeX inline formulas properly
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false}
+                ],
+                throwOnError: false
+            });
+        }
+
+        function selectAnswer(questionId, optionIndex) {
+            userAnswers[questionId] = optionIndex;
+            localStorage.setItem('oxford_user_answers', JSON.stringify(userAnswers));
+            renderCurrentQuestion();
+            updateHeaderStats();
+        }
+
+        function nextQuestion() {
+            if (currentIndex < quizData.length - 1) {
+                currentIndex++;
+                renderCurrentQuestion();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function prevQuestion() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                renderCurrentQuestion();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function jumpToPart(partValue) {
+            const firstIndex = quizData.findIndex(q => q.part === partValue);
+            if (firstIndex !== -1) {
+                currentIndex = firstIndex;
+                renderCurrentQuestion();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function updateHeaderStats() {
+            const answeredKeys = Object.keys(userAnswers);
+            const answeredCount = answeredKeys.length;
+            
+            let correctCount = 0;
+            answeredKeys.forEach(id => {
+                const q = quizData.find(item => item.id == id);
+                if (q && userAnswers[id] === q.answer) {
+                    correctCount++;
+                }
+            });
+
+            document.getElementById('header-score').innerText = `${correctCount} / 60`;
+            const percent = Math.round((answeredCount / 60) * 100);
+            document.getElementById('header-progress').innerText = `${percent}%`;
+        }
+
+        function resetQuiz() {
+            userAnswers = {};
+            localStorage.removeItem('oxford_user_answers');
+            currentIndex = 0;
+            renderCurrentQuestion();
+            updateHeaderStats();
+            showModal("Quiz Reset", "All answers have been cleared successfully.");
+        }
+
+        function submitQuizModal() {
+            const answeredCount = Object.keys(userAnswers).length;
+            let correctCount = 0;
+            Object.keys(userAnswers).forEach(id => {
+                const q = quizData.find(item => item.id == id);
+                if (q && userAnswers[id] === q.answer) {
+                    correctCount++;
+                }
+            });
+
+            const name = studentInfo.name || "Student";
+            const msg = `Great effort, ${name}!\n\nYou have answered ${answeredCount} out of 60 questions.\nYour current score: ${correctCount} correct answers (${Math.round((correctCount/60)*100)}%).\n\nKeep up the excellent work with your Oxford Mathematics practice!`;
+            showModal("Quiz Summary", msg);
+        }
+
+        function showModal(title, message) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerText = message;
+            document.getElementById('custom-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('custom-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
